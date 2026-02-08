@@ -211,7 +211,7 @@ export default function LobsterTrap() {
         {/* Waiting Lobbies */}
         {lobbies.length > 0 && (
           <div style={styles.lobbiesSection}>
-            <div style={styles.lobbiesTitle}>Waiting for players</div>
+            <div style={styles.lobbiesTitle}>🦞 Waiting for Players</div>
             {lobbies.map(lobby => (
               <div key={lobby.id} style={styles.lobbyRow}>
                 <span style={styles.lobbyCount}>{lobby.playerCount}/5</span>
@@ -427,22 +427,43 @@ const styles = {
   msgContent: { color: '#555' },
 
   lobbiesSection: {
-    marginTop: '16px',
-    padding: '16px',
+    marginTop: '20px',
+    padding: '24px',
     backgroundColor: '#fff',
-    borderRadius: '8px'
+    borderRadius: '12px',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.06)',
+    maxWidth: '480px',
+    width: '100%',
+    margin: '20px auto 0 auto'
   },
-  lobbiesTitle: { fontSize: '13px', fontWeight: '600', color: '#333', marginBottom: '10px' },
+  lobbiesTitle: { 
+    fontSize: '16px', 
+    fontWeight: '700', 
+    color: '#333', 
+    marginBottom: '16px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  },
   lobbyRow: {
     display: 'flex',
     gap: '12px',
     alignItems: 'center',
-    padding: '8px 0',
-    borderBottom: '1px solid #f0f0f0',
-    fontSize: '13px'
+    padding: '12px 16px',
+    backgroundColor: '#f8f9fa',
+    borderRadius: '8px',
+    marginBottom: '8px',
+    fontSize: '14px'
   },
-  lobbyCount: { fontWeight: '600', color: '#6fa8dc' },
-  lobbyNames: { color: '#666' },
+  lobbyCount: { 
+    fontWeight: '700', 
+    color: '#fff',
+    backgroundColor: '#6fa8dc',
+    padding: '4px 10px',
+    borderRadius: '12px',
+    fontSize: '12px'
+  },
+  lobbyNames: { color: '#555', flex: 1 },
 
   emptyState: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0' },
   emptyContent: {
