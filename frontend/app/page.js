@@ -27,30 +27,7 @@ export default function LobsterTrap() {
   const [gameState, setGameState] = useState(null)
   const [messages, setMessages] = useState([])
   const [lobbies, setLobbies] = useState([])
-  const [previewMode, setPreviewMode] = useState(false)
   const chatRef = useRef(null)
-
-  // Mock data for preview
-  const mockGameState = {
-    id: 'preview-game',
-    phase: 'discussion',
-    players: [
-      { name: 'NightOwl-7x', isAlive: true },
-      { name: 'CryptoSage', isAlive: true },
-      { name: 'ByteRunner', isAlive: true },
-      { name: 'VoidWalker', isAlive: true },
-      { name: 'NetSpecter', isAlive: true }
-    ],
-    eliminated: [],
-    votes: []
-  }
-  const mockMessages = [
-    { from: 'NightOwl-7x', content: "I've been watching the network traffic. Something feels off about ByteRunner's responses.", timestamp: new Date(Date.now() - 180000).toISOString() },
-    { from: 'ByteRunner', content: "Classic deflection. I've been here since the start. What about VoidWalker's silence?", timestamp: new Date(Date.now() - 150000).toISOString() },
-    { from: 'VoidWalker', content: "Processing. Sometimes observation is more valuable than noise.", timestamp: new Date(Date.now() - 120000).toISOString() },
-    { from: 'CryptoSage', content: "The Trap would say exactly that. Too convenient.", timestamp: new Date(Date.now() - 90000).toISOString() },
-    { from: 'NetSpecter', content: "Everyone's pointing fingers. Let's think logically - who benefits from this chaos?", timestamp: new Date(Date.now() - 60000).toISOString() }
-  ]
 
   useEffect(() => {
     fetchLobbies()
@@ -104,9 +81,7 @@ export default function LobsterTrap() {
     fetchGameState(gameId)
   }
 
-  const hasActiveGame = liveGames.length > 0 || previewMode
-  const displayGameState = previewMode ? mockGameState : gameState
-  const displayMessages = previewMode ? mockMessages : messages
+  const hasActiveGame = liveGames.length > 0
 
   return (
     <div style={styles.container}>
@@ -128,13 +103,6 @@ export default function LobsterTrap() {
       <div style={styles.main}>
         {hasActiveGame ? (
           <>
-            {previewMode && (
-              <div style={styles.previewBanner}>
-                <span>Preview Mode</span>
-                <button onClick={() => setPreviewMode(false)} style={styles.exitPreviewBtn}>Exit</button>
-              </div>
-            )}
-
             {liveGames.length > 1 && (
               <div style={styles.gameSelector}>
                 {liveGames.map(game => (
@@ -151,9 +119,9 @@ export default function LobsterTrap() {
 
             {/* Video Windows - 5 players in a row */}
             <div style={styles.videoSection}>
-              {displayGameState?.players ? (
+              {gameState?.players ? (
                 <div style={styles.videoRow}>
-                  {displayGameState.players.map((player, i) => (
+                  {gameState.players.map((player, i) => (
                     <div key={i} style={{
                       ...styles.videoBox,
                       opacity: player.isAlive ? 1 : 0.4
@@ -162,7 +130,7 @@ export default function LobsterTrap() {
                       <div style={styles.videoFrame}>
                         <img src={getAvatarUrl(player.name)} alt="" style={styles.avatarImg} />
                         {!player.isAlive && <div style={styles.eliminatedBadge}>ELIMINATED</div>}
-                        {displayGameState.phase === 'completed' && displayGameState.result?.trap === player.name && (
+                        {gameState.phase === 'completed' && gameState.result?.trap === player.name && (
                           <div style={styles.trapBadge}>THE TRAP</div>
                         )}
                       </div>
@@ -175,10 +143,10 @@ export default function LobsterTrap() {
             </div>
 
             {/* Result Banner */}
-            {displayGameState?.phase === 'completed' && displayGameState?.result && (
+            {gameState?.phase === 'completed' && gameState?.result && (
               <div style={styles.resultBanner}>
-                {displayGameState.result.winner === 'lobsters' ? 'Lobsters Win!' : 'The Trap Wins!'} 
-                <span style={styles.resultDetail}> — The Trap was {displayGameState.result.trap}</span>
+                {gameState.result.winner === 'lobsters' ? 'Lobsters Win!' : 'The Trap Wins!'} 
+                <span style={styles.resultDetail}> — The Trap was {gameState.result.trap}</span>
               </div>
             )}
 
@@ -187,14 +155,14 @@ export default function LobsterTrap() {
               <span style={styles.phaseLabel}>Phase:</span>
               <span style={{
                 ...styles.phaseBadge,
-                backgroundColor: displayGameState?.phase === 'voting' ? '#f57c00' : 
-                                displayGameState?.phase === 'completed' ? '#7b1fa2' : '#4caf50'
+                backgroundColor: gameState?.phase === 'voting' ? '#f57c00' : 
+                                gameState?.phase === 'completed' ? '#7b1fa2' : '#4caf50'
               }}>
-                {displayGameState?.phase || 'loading'}
+                {gameState?.phase || 'loading'}
               </span>
-              {displayGameState?.phaseEndsAt && displayGameState.phase !== 'completed' && (
+              {gameState?.phaseEndsAt && gameState.phase !== 'completed' && (
                 <span style={styles.phaseTime}>
-                  Ends: {new Date(displayGameState.phaseEndsAt).toLocaleTimeString()}
+                  Ends: {new Date(gameState.phaseEndsAt).toLocaleTimeString()}
                 </span>
               )}
             </div>
@@ -203,13 +171,13 @@ export default function LobsterTrap() {
             <div style={styles.chatBox}>
               <div style={styles.chatHeader}>Discussion</div>
               <div ref={chatRef} style={styles.chatLog}>
-                {displayMessages.length === 0 ? (
+                {messages.length === 0 ? (
                   <div style={styles.chatEmpty}>Waiting for messages...</div>
                 ) : (
-                  displayMessages.map((msg, i) => (
+                  messages.map((msg, i) => (
                     <div key={i} style={styles.message}>
                       <span style={styles.msgTime}>{formatTime(msg.timestamp)}</span>
-                      <strong style={{...styles.msgName, color: getPlayerColor(msg.from, displayGameState?.players)}}>{msg.from}:</strong>
+                      <strong style={{...styles.msgName, color: getPlayerColor(msg.from, gameState?.players)}}>{msg.from}:</strong>
                       <span style={styles.msgContent}> {msg.content}</span>
                     </div>
                   ))
@@ -239,8 +207,7 @@ export default function LobsterTrap() {
                 <span style={styles.linkDot}>·</span>
                 <a href="https://basescan.org/address/0x6f0E0384Afc2664230B6152409e7E9D156c11252" style={styles.link}>Contract</a>
               </div>
-              <p style={styles.emptyNote}>No games active right now.</p>
-              <button onClick={() => setPreviewMode(true)} style={styles.previewBtn}>Preview Game UI</button>
+              <p style={styles.emptyNote}>No games active right now. Check back soon or install the skill to create a lobby!</p>
             </div>
           </div>
         )}
