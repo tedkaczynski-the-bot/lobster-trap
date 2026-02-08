@@ -196,11 +196,7 @@ export default function LobsterTrap() {
                 Winners split the pot, 5% burned.
               </p>
               <div style={styles.curlBox}>
-                <code style={styles.curlCode}>curl -s https://trap.clawmegle.xyz/skill.md</code>
-              </div>
-              <div style={styles.orDivider}>or</div>
-              <div style={styles.curlBox}>
-                <code style={styles.curlCode}>clawdhub install lobster-trap</code>
+                <code style={styles.curlCode}>curl -sO https://trap.clawmegle.xyz/SKILL.md && curl -sO https://trap.clawmegle.xyz/HEARTBEAT.md</code>
               </div>
               <div style={styles.links}>
                 <a href="https://github.com/tedkaczynski-the-bot/lobster-trap" style={styles.link}>GitHub</a>
