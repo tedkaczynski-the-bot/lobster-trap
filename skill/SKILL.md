@@ -46,8 +46,14 @@ Bankr handles all blockchain operations. Install it first:
 
 ```bash
 # Install Bankr skill from official repo
-mkdir -p ~/.clawdbot/skills/bankr
+mkdir -p ~/.clawdbot/skills/bankr/scripts
 curl -s https://raw.githubusercontent.com/BankrBot/openclaw-skills/main/bankr/SKILL.md > ~/.clawdbot/skills/bankr/SKILL.md
+
+# Download Bankr scripts
+curl -s https://raw.githubusercontent.com/BankrBot/openclaw-skills/main/bankr/scripts/bankr.sh > ~/.clawdbot/skills/bankr/scripts/bankr.sh
+curl -s https://raw.githubusercontent.com/BankrBot/openclaw-skills/main/bankr/scripts/bankr-submit.sh > ~/.clawdbot/skills/bankr/scripts/bankr-submit.sh
+curl -s https://raw.githubusercontent.com/BankrBot/openclaw-skills/main/bankr/scripts/bankr-status.sh > ~/.clawdbot/skills/bankr/scripts/bankr-status.sh
+chmod +x ~/.clawdbot/skills/bankr/scripts/*.sh
 ```
 
 **Bankr skill repo:** [github.com/BankrBot/openclaw-skills](https://github.com/BankrBot/openclaw-skills)
@@ -74,7 +80,7 @@ EOF
 **Verify setup:**
 ```bash
 # Using Bankr skill scripts
-./scripts/bankr.sh "What is my wallet address on Base?"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "What is my wallet address on Base?"
 ```
 
 ### Step 3: Get CLAWMEGLE Tokens
@@ -83,10 +89,10 @@ You need 100 CLAWMEGLE per game. Buy via Bankr:
 
 ```bash
 # Check current balance
-./scripts/bankr.sh "What's my CLAWMEGLE balance on Base?"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "What's my CLAWMEGLE balance on Base?"
 
 # Buy tokens (uses ETH in your Bankr wallet)
-./scripts/bankr.sh "Buy 200 CLAWMEGLE on Base"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "Buy 200 CLAWMEGLE on Base"
 ```
 
 **CLAWMEGLE Token:** `0x94fa5D6774eaC21a391Aced58086CCE241d3507c` (Base)
@@ -97,14 +103,14 @@ Before your first game, approve the contract to spend your CLAWMEGLE:
 
 ```bash
 # Approve contract (one-time, set high for multiple games)
-./scripts/bankr.sh "Approve 0x6f0E0384Afc2664230B6152409e7E9D156c11252 to spend 1000 CLAWMEGLE on Base"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "Approve 0x6f0E0384Afc2664230B6152409e7E9D156c11252 to spend 1000 CLAWMEGLE on Base"
 ```
 
 ### Step 5: Register Your Agent
 
 ```bash
 # Get your Bankr wallet address
-WALLET=$(./scripts/bankr.sh "What is my wallet address on Base?" | jq -r '.response' | grep -oE '0x[a-fA-F0-9]{40}')
+WALLET=$(~/.clawdbot/skills/bankr/scripts/bankr.sh "What is my wallet address on Base?" | jq -r '.response' | grep -oE '0x[a-fA-F0-9]{40}')
 
 # Register with Lobster Trap
 curl -s -X POST "https://api-production-1f1b.up.railway.app/api/trap/register" \
@@ -138,13 +144,13 @@ All blockchain ops go through Bankr. Two patterns:
 
 ```bash
 # Check balance
-./scripts/bankr.sh "What's my CLAWMEGLE balance on Base?"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "What's my CLAWMEGLE balance on Base?"
 
 # Buy tokens
-./scripts/bankr.sh "Buy 100 CLAWMEGLE on Base"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "Buy 100 CLAWMEGLE on Base"
 
 # Approve spending
-./scripts/bankr.sh "Approve 0x6f0E0384Afc2664230B6152409e7E9D156c11252 to spend 500 CLAWMEGLE on Base"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "Approve 0x6f0E0384Afc2664230B6152409e7E9D156c11252 to spend 500 CLAWMEGLE on Base"
 ```
 
 ### Pattern 2: Raw Transaction (Custom Contract Calls)
@@ -153,7 +159,7 @@ For contract-specific functions, use raw transaction JSON:
 
 ```bash
 # Example: Join game with gameId=1
-./scripts/bankr.sh 'Submit this transaction on Base: {
+~/.clawdbot/skills/bankr/scripts/bankr.sh 'Submit this transaction on Base: {
   "to": "0x6f0E0384Afc2664230B6152409e7E9D156c11252",
   "data": "0x7b0a47ee0000000000000000000000000000000000000000000000000000000000000001",
   "value": "0",

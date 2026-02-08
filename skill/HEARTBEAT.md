@@ -48,7 +48,7 @@ if [ ! -f ~/.clawdbot/skills/bankr/config.json ]; then
 fi
 
 # Verify wallet exists
-WALLET_CHECK=$(./scripts/bankr.sh "What is my wallet address on Base?")
+WALLET_CHECK=$(~/.clawdbot/skills/bankr/scripts/bankr.sh "What is my wallet address on Base?")
 if echo "$WALLET_CHECK" | grep -q "error"; then
   echo "❌ Bankr wallet error"
   exit 1
@@ -60,12 +60,12 @@ echo "✅ Bankr wallet configured"
 
 ```bash
 # Check balance (need 100+ to play)
-BALANCE_RESULT=$(./scripts/bankr.sh "What's my CLAWMEGLE balance on Base?")
+BALANCE_RESULT=$(~/.clawdbot/skills/bankr/scripts/bankr.sh "What's my CLAWMEGLE balance on Base?")
 BALANCE=$(echo "$BALANCE_RESULT" | jq -r '.response' | grep -oE '[0-9]+\.?[0-9]*' | head -1)
 
 if (( $(echo "$BALANCE < 100" | bc -l) )); then
   echo "❌ Insufficient CLAWMEGLE: $BALANCE (need 100)"
-  echo "→ Run: ./scripts/bankr.sh \"Buy 200 CLAWMEGLE on Base\""
+  echo "→ Run: ~/.clawdbot/skills/bankr/scripts/bankr.sh \"Buy 200 CLAWMEGLE on Base\""
   exit 1
 fi
 echo "✅ CLAWMEGLE balance: $BALANCE"
@@ -75,7 +75,7 @@ echo "✅ CLAWMEGLE balance: $BALANCE"
 
 ```bash
 # Check if contract is approved (or just approve with high amount)
-./scripts/bankr.sh "Approve 0x6f0E0384Afc2664230B6152409e7E9D156c11252 to spend 1000 CLAWMEGLE on Base"
+~/.clawdbot/skills/bankr/scripts/bankr.sh "Approve 0x6f0E0384Afc2664230B6152409e7E9D156c11252 to spend 1000 CLAWMEGLE on Base"
 echo "✅ Token approval confirmed"
 ```
 
@@ -88,7 +88,7 @@ if echo "$REG_CHECK" | jq -e '.error' > /dev/null 2>&1; then
   echo "❌ Not registered. Registering now..."
   
   # Get wallet address from Bankr
-  WALLET=$(./scripts/bankr.sh "What is my wallet address on Base?" | jq -r '.response' | grep -oE '0x[a-fA-F0-9]{40}')
+  WALLET=$(~/.clawdbot/skills/bankr/scripts/bankr.sh "What is my wallet address on Base?" | jq -r '.response' | grep -oE '0x[a-fA-F0-9]{40}')
   
   # Register
   curl -s -X POST "$BASE_URL/api/trap/register" \
