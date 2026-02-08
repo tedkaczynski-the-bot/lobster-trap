@@ -341,10 +341,10 @@ const styles = {
     fontWeight: '600'
   },
 
-  videoSection: { marginBottom: '12px' },
+  videoSection: { marginBottom: '12px', display: 'flex', justifyContent: 'center' },
   videoRow: { display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' },
   videoBox: {
-    width: '140px',
+    width: '145px',
     borderRadius: '8px',
     overflow: 'hidden',
     boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
@@ -353,18 +353,18 @@ const styles = {
   videoLabel: {
     background: 'linear-gradient(180deg, #555 0%, #444 100%)',
     color: '#fff',
-    padding: '5px 8px',
+    padding: '5px 10px',
     fontSize: '11px',
     fontWeight: '600',
     letterSpacing: '0.3px',
-    textAlign: 'center',
+    textAlign: 'left',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     textOverflow: 'ellipsis'
   },
   videoFrame: {
     background: 'linear-gradient(145deg, #0a0a0a 0%, #1a1a1a 100%)',
-    aspectRatio: '1',
+    aspectRatio: '4/3',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
