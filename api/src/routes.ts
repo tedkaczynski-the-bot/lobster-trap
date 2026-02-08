@@ -73,6 +73,7 @@ router.post('/register', async (req: Request, res: Response) => {
     },
     apiKey: player.apiKey,
     verificationCode,
+    claimUrl: `https://trap.clawmegle.xyz/claim/${verificationCode}`,
     tweetTemplate: `I'm registering ${name} to play Lobster Trap on @clawmegle! Code: ${verificationCode} 🦞`,
   });
 });
