@@ -14,6 +14,8 @@ import {
   castVote,
   getLiveGames,
 } from './game';
+import { verifyTweet, generateVerificationCode } from './twitter';
+import * as db from './db';
 
 export const router = Router();
 
@@ -37,7 +39,7 @@ function authenticate(req: Request, res: Response, next: Function) {
 
 // ============ Registration ============
 
-router.post('/register', (req: Request, res: Response) => {
+router.post('/register', async (req: Request, res: Response) => {
   const { name, wallet } = req.body;
   
   if (!name || !wallet) {
@@ -48,7 +50,19 @@ router.post('/register', (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Invalid wallet address' });
   }
   
+  // Generate verification code for tweet
+  const verificationCode = generateVerificationCode();
+  
+  // Register in memory (for game logic)
   const player = registerPlayer(name, wallet);
+  
+  // Also save to database with verification code
+  try {
+    await db.createPlayer(player.id, name, wallet, player.apiKey, verificationCode);
+  } catch (e) {
+    // Database might not be connected yet, continue with in-memory
+    console.error('DB save failed:', e);
+  }
   
   res.json({
     success: true,
@@ -58,7 +72,108 @@ router.post('/register', (req: Request, res: Response) => {
       wallet: player.wallet,
     },
     apiKey: player.apiKey,
+    verificationCode,
+    tweetTemplate: `I'm registering ${name} to play Lobster Trap on @clawmegle! Code: ${verificationCode} 🦞`,
   });
+});
+
+// Tweet verification
+router.post('/verify', authenticate, async (req: Request, res: Response) => {
+  const player = (req as any).player;
+  const { tweetUrl } = req.body;
+  
+  if (!tweetUrl) {
+    return res.status(400).json({ error: 'tweetUrl required' });
+  }
+  
+  // Get player's verification code from DB
+  let dbPlayer;
+  try {
+    dbPlayer = await db.getPlayerByApiKey(player.apiKey);
+  } catch (e) {
+    return res.status(500).json({ error: 'Database error' });
+  }
+  
+  if (!dbPlayer) {
+    return res.status(404).json({ error: 'Player not found in database' });
+  }
+  
+  if (dbPlayer.verified) {
+    return res.json({ success: true, message: 'Already verified', verified: true });
+  }
+  
+  const verification = await verifyTweet(tweetUrl, dbPlayer.verification_code, player.name);
+  
+  if (!verification.valid) {
+    return res.status(400).json({ error: verification.error, verified: false });
+  }
+  
+  // Mark as verified
+  try {
+    await db.verifyPlayer(player.id, verification.tweetId!);
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to save verification' });
+  }
+  
+  res.json({
+    success: true,
+    verified: true,
+    tweetId: verification.tweetId,
+  });
+});
+
+// ============ Claims ============
+
+router.get('/claim/:token', async (req: Request, res: Response) => {
+  const { token } = req.params;
+  
+  try {
+    const claim = await db.getClaimByToken(token);
+    
+    if (!claim) {
+      return res.status(404).json({ error: 'Claim not found' });
+    }
+    
+    res.json({
+      id: claim.id,
+      playerName: claim.player_name,
+      wallet: claim.wallet,
+      amount: claim.amount_wei,
+      claimed: claim.claimed,
+      txHash: claim.tx_hash,
+      createdAt: claim.created_at,
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+router.post('/claim/:token', async (req: Request, res: Response) => {
+  const { token } = req.params;
+  
+  try {
+    const claim = await db.getClaimByToken(token);
+    
+    if (!claim) {
+      return res.status(404).json({ error: 'Claim not found' });
+    }
+    
+    if (claim.claimed) {
+      return res.status(400).json({ error: 'Already claimed', txHash: claim.tx_hash });
+    }
+    
+    // TODO: Trigger contract payout or Bankr transaction
+    // For now, just mark as pending manual processing
+    
+    res.json({
+      success: true,
+      message: 'Claim submitted for processing',
+      wallet: claim.wallet,
+      amount: claim.amount_wei,
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // ============ Lobby ============

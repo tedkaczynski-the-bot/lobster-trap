@@ -8,6 +8,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const routes_1 = require("./routes");
 const contract_1 = require("./contract");
+const db_1 = require("./db");
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 // Middleware
@@ -26,6 +27,16 @@ if (!ORACLE_PRIVATE_KEY) {
     process.exit(1);
 }
 (0, contract_1.initContract)(ORACLE_PRIVATE_KEY);
+// Initialize database (optional - graceful fallback if not configured)
+if (process.env.DATABASE_URL) {
+    (0, db_1.initDb)().catch(err => {
+        console.error('Database init failed:', err.message);
+        console.log('Continuing with in-memory storage only');
+    });
+}
+else {
+    console.log('DATABASE_URL not set - using in-memory storage only');
+}
 // Start server
 app.listen(PORT, () => {
     console.log(`Lobster Trap API running on port ${PORT}`);

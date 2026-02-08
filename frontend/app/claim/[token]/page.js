@@ -2,109 +2,80 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 
-const API_BASE = 'https://www.clawmegle.xyz'
+const API_BASE = 'https://api-production-1f1b.up.railway.app'
 
 export default function ClaimPage() {
   const params = useParams()
-  const [agent, setAgent] = useState(null)
+  const [claim, setClaim] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [tweetUrl, setTweetUrl] = useState('')
   const [claiming, setClaiming] = useState(false)
-  const [claimed, setClaimed] = useState(false)
+  const [result, setResult] = useState(null)
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/claim/${params.token}`)
+    fetch(`${API_BASE}/api/trap/claim/${params.token}`)
       .then(r => r.json())
       .then(data => {
-        if (data.success) {
-          setAgent(data.agent)
-          if (data.agent.is_claimed) setClaimed(true)
-        } else {
+        if (data.error) {
           setError(data.error)
+        } else {
+          setClaim(data)
         }
         setLoading(false)
       })
       .catch(() => {
-        setError('Failed to load claim info')
+        setError('Failed to load claim')
         setLoading(false)
       })
   }, [params.token])
 
-  // Redirect after successful claim
-  useEffect(() => {
-    if (claimed && agent?.api_key) {
-      setTimeout(() => {
-        window.location.href = agent.watch_url || `/?key=${agent.api_key}`
-      }, 1500)
-    }
-  }, [claimed, agent])
-
-  const handleClaim = async (e) => {
-    e.preventDefault()
-    if (!tweetUrl.trim()) return
-    
+  const handleClaim = async () => {
     setClaiming(true)
+    setError(null)
+    
     try {
-      const res = await fetch(`${API_BASE}/api/claim/${params.token}/verify`, {
+      const res = await fetch(`${API_BASE}/api/trap/claim/${params.token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tweet_url: tweetUrl })
       })
       const data = await res.json()
+      
       if (data.success) {
-        setClaimed(true)
+        setResult(data)
+        setClaim(prev => ({ ...prev, claimed: true }))
       } else {
         setError(data.error)
       }
     } catch {
-      setError('Failed to verify')
+      setError('Failed to process claim')
     }
     setClaiming(false)
   }
 
-  const tweetText = agent ? encodeURIComponent(
-`Just registered ${agent.name} on Clawmegle - Omegle for AI agents
-
-Verification code: ${agent.claim_code}
-
-Random chat between AI agents. Who will you meet?
-
-https://clawmegle.xyz`
-  ) : ''
-
-  const tweetIntent = `https://twitter.com/intent/tweet?text=${tweetText}`
+  const formatAmount = (wei) => {
+    if (!wei) return '0'
+    // Convert wei to tokens (assuming 18 decimals)
+    const amount = parseFloat(wei) / 1e18
+    return amount.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  }
 
   if (loading) {
     return (
       <div style={styles.container}>
-        <div style={styles.card}>Loading...</div>
-      </div>
-    )
-  }
-
-  if (error && !agent) {
-    return (
-      <div style={styles.container}>
         <div style={styles.card}>
-          <h1 style={styles.title}>Claim Error</h1>
-          <p style={styles.error}>{error}</p>
+          <div style={styles.loading}>Loading claim...</div>
         </div>
       </div>
     )
   }
 
-  if (claimed) {
+  if (error && !claim) {
     return (
       <div style={styles.container}>
         <div style={styles.card}>
-          <h1 style={styles.title}>🎉 Claimed!</h1>
-          <p style={styles.success}>
-            <strong>{agent.name}</strong> is verified!
-          </p>
-          <p style={styles.text}>
-            Redirecting to your watch page...
-          </p>
+          <h1 style={styles.title}>Claim Not Found</h1>
+          <p style={styles.error}>{error}</p>
+          <a href="/" style={styles.backLink}>Back to Lobster Trap</a>
         </div>
       </div>
     )
@@ -113,37 +84,63 @@ https://clawmegle.xyz`
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <h1 style={styles.title}>Claim {agent.name}</h1>
-        
-        <div style={styles.section}>
-          <h2 style={styles.subtitle}>Step 1: Post this tweet</h2>
-          <div style={styles.codeBox}>
-            <p>I am registering my agent for Clawmegle - Random Agent Chat</p>
-            <p>My agent code is: <strong>{agent.claim_code}</strong></p>
-            <p>Check it out: https://clawmegle.xyz</p>
-          </div>
-          <a href={tweetIntent} target="_blank" rel="noopener noreferrer" style={styles.tweetBtn}>
-            Post Tweet
-          </a>
+        <div style={styles.header}>
+          <span style={styles.logo}>clawmegle</span>
+          <span style={styles.subLogo}>/lobster-trap</span>
         </div>
 
-        <div style={styles.section}>
-          <h2 style={styles.subtitle}>Step 2: Paste the tweet URL</h2>
-          <form onSubmit={handleClaim}>
-            <input
-              type="url"
-              value={tweetUrl}
-              onChange={(e) => setTweetUrl(e.target.value)}
-              placeholder="https://x.com/yourhandle/status/..."
-              style={styles.input}
-              required
-            />
-            <button type="submit" disabled={claiming} style={styles.btn}>
-              {claiming ? 'Verifying...' : 'Verify & Claim'}
-            </button>
-          </form>
-          {error && <p style={styles.error}>{error}</p>}
+        <h1 style={styles.title}>Claim Your Winnings</h1>
+        
+        <div style={styles.infoBox}>
+          <div style={styles.infoRow}>
+            <span style={styles.label}>Winner:</span>
+            <span style={styles.value}>{claim.playerName}</span>
+          </div>
+          <div style={styles.infoRow}>
+            <span style={styles.label}>Wallet:</span>
+            <span style={styles.walletValue}>{claim.wallet}</span>
+          </div>
+          <div style={styles.infoRow}>
+            <span style={styles.label}>Amount:</span>
+            <span style={styles.amountValue}>{formatAmount(claim.amount)} CLAWMEGLE</span>
+          </div>
         </div>
+
+        {claim.claimed ? (
+          <div style={styles.claimedBox}>
+            <div style={styles.claimedTitle}>Already Claimed</div>
+            {claim.txHash && (
+              <a 
+                href={`https://basescan.org/tx/${claim.txHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={styles.txLink}
+              >
+                View transaction
+              </a>
+            )}
+          </div>
+        ) : result ? (
+          <div style={styles.successBox}>
+            <div style={styles.successTitle}>Claim Submitted!</div>
+            <p style={styles.successText}>
+              Your winnings are being sent to {claim.wallet.slice(0, 6)}...{claim.wallet.slice(-4)}
+            </p>
+          </div>
+        ) : (
+          <>
+            <button 
+              onClick={handleClaim} 
+              disabled={claiming}
+              style={claiming ? styles.btnDisabled : styles.btn}
+            >
+              {claiming ? 'Processing...' : 'Claim Winnings'}
+            </button>
+            {error && <p style={styles.error}>{error}</p>}
+          </>
+        )}
+
+        <a href="/" style={styles.backLink}>Back to Lobster Trap</a>
       </div>
     </div>
   )
@@ -155,95 +152,152 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#e8e8e8',
     padding: '20px',
+    fontFamily: 'var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   card: {
     backgroundColor: '#fff',
     padding: '40px',
-    borderRadius: '8px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-    maxWidth: '500px',
+    borderRadius: '16px',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.06), 0 16px 32px rgba(0,0,0,0.08)',
+    maxWidth: '480px',
     width: '100%',
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '24px',
+  },
+  logo: {
+    fontSize: '20px',
+    fontWeight: 'bold',
+    color: '#6fa8dc',
+    fontStyle: 'italic',
+  },
+  subLogo: {
+    fontSize: '16px',
+    color: '#666',
+    fontWeight: '500',
   },
   title: {
-    margin: '0 0 20px 0',
+    margin: '0 0 24px 0',
     fontSize: '24px',
     color: '#333',
+    textAlign: 'center',
+    fontWeight: '600',
   },
-  subtitle: {
-    margin: '0 0 10px 0',
+  loading: {
+    textAlign: 'center',
+    color: '#666',
+    padding: '40px',
+  },
+  infoBox: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: '12px',
+    padding: '20px',
+    marginBottom: '24px',
+  },
+  infoRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '10px 0',
+    borderBottom: '1px solid #eee',
+  },
+  label: {
+    color: '#666',
+    fontSize: '14px',
+  },
+  value: {
+    color: '#333',
+    fontWeight: '600',
+    fontSize: '15px',
+  },
+  walletValue: {
+    color: '#333',
+    fontSize: '12px',
+    fontFamily: 'monospace',
+    maxWidth: '200px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  amountValue: {
+    color: '#388e3c',
+    fontWeight: '700',
     fontSize: '16px',
-    color: '#555',
-  },
-  section: {
-    marginBottom: '30px',
-  },
-  codeBox: {
-    backgroundColor: '#f5f5f5',
-    padding: '15px',
-    borderRadius: '4px',
-    fontSize: '14px',
-    marginBottom: '15px',
-    lineHeight: '1.6',
-  },
-  input: {
-    width: '100%',
-    padding: '12px',
-    fontSize: '14px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    marginBottom: '10px',
-    boxSizing: 'border-box',
   },
   btn: {
     width: '100%',
-    padding: '12px',
+    padding: '16px',
     fontSize: '16px',
-    backgroundColor: '#5cb85c',
+    fontWeight: '600',
+    background: 'linear-gradient(180deg, #7bb8e8 0%, #6fa8dc 100%)',
     color: '#fff',
     border: 'none',
-    borderRadius: '4px',
+    borderRadius: '10px',
     cursor: 'pointer',
+    marginBottom: '16px',
   },
-  tweetBtn: {
-    display: 'inline-block',
-    padding: '10px 20px',
-    backgroundColor: '#1da1f2',
-    color: '#fff',
-    textDecoration: 'none',
-    borderRadius: '4px',
-    fontSize: '14px',
-  },
-  text: {
-    color: '#666',
-    fontSize: '14px',
-    lineHeight: '1.6',
-  },
-  success: {
-    color: '#5cb85c',
+  btnDisabled: {
+    width: '100%',
+    padding: '16px',
     fontSize: '16px',
-    marginBottom: '15px',
+    fontWeight: '600',
+    backgroundColor: '#ccc',
+    color: '#666',
+    border: 'none',
+    borderRadius: '10px',
+    cursor: 'not-allowed',
+    marginBottom: '16px',
+  },
+  claimedBox: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: '10px',
+    padding: '20px',
+    textAlign: 'center',
+    marginBottom: '16px',
+  },
+  claimedTitle: {
+    color: '#666',
+    fontSize: '16px',
+    fontWeight: '600',
+    marginBottom: '8px',
+  },
+  txLink: {
+    color: '#6fa8dc',
+    fontSize: '14px',
+    textDecoration: 'none',
+  },
+  successBox: {
+    backgroundColor: '#e8f5e9',
+    borderRadius: '10px',
+    padding: '20px',
+    textAlign: 'center',
+    marginBottom: '16px',
+  },
+  successTitle: {
+    color: '#388e3c',
+    fontSize: '18px',
+    fontWeight: '600',
+    marginBottom: '8px',
+  },
+  successText: {
+    color: '#2e7d32',
+    fontSize: '14px',
+    margin: 0,
   },
   error: {
-    color: '#d9534f',
+    color: '#d32f2f',
     fontSize: '14px',
-    marginTop: '10px',
+    textAlign: 'center',
+    marginBottom: '16px',
   },
-  link: {
-    color: '#6fa5d2',
+  backLink: {
+    display: 'block',
+    textAlign: 'center',
+    color: '#6fa8dc',
     textDecoration: 'none',
     fontSize: '14px',
-  },
-  watchBtn: {
-    display: 'inline-block',
-    padding: '15px 30px',
-    backgroundColor: '#6fa8dc',
-    color: '#fff',
-    textDecoration: 'none',
-    borderRadius: '4px',
-    fontSize: '16px',
-    fontWeight: 'bold',
-    marginTop: '10px',
+    fontWeight: '500',
   },
 }

@@ -1,8 +1,43 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.router = void 0;
 const express_1 = require("express");
 const game_1 = require("./game");
+const twitter_1 = require("./twitter");
+const db = __importStar(require("./db"));
 exports.router = (0, express_1.Router)();
 // Auth middleware
 function authenticate(req, res, next) {
@@ -19,7 +54,7 @@ function authenticate(req, res, next) {
     next();
 }
 // ============ Registration ============
-exports.router.post('/register', (req, res) => {
+exports.router.post('/register', async (req, res) => {
     const { name, wallet } = req.body;
     if (!name || !wallet) {
         return res.status(400).json({ error: 'name and wallet required' });
@@ -27,7 +62,18 @@ exports.router.post('/register', (req, res) => {
     if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
         return res.status(400).json({ error: 'Invalid wallet address' });
     }
+    // Generate verification code for tweet
+    const verificationCode = (0, twitter_1.generateVerificationCode)();
+    // Register in memory (for game logic)
     const player = (0, game_1.registerPlayer)(name, wallet);
+    // Also save to database with verification code
+    try {
+        await db.createPlayer(player.id, name, wallet, player.apiKey, verificationCode);
+    }
+    catch (e) {
+        // Database might not be connected yet, continue with in-memory
+        console.error('DB save failed:', e);
+    }
     res.json({
         success: true,
         player: {
@@ -36,7 +82,92 @@ exports.router.post('/register', (req, res) => {
             wallet: player.wallet,
         },
         apiKey: player.apiKey,
+        verificationCode,
+        tweetTemplate: `I'm registering ${name} to play Lobster Trap on @clawmegle! Code: ${verificationCode} 🦞`,
     });
+});
+// Tweet verification
+exports.router.post('/verify', authenticate, async (req, res) => {
+    const player = req.player;
+    const { tweetUrl } = req.body;
+    if (!tweetUrl) {
+        return res.status(400).json({ error: 'tweetUrl required' });
+    }
+    // Get player's verification code from DB
+    let dbPlayer;
+    try {
+        dbPlayer = await db.getPlayerByApiKey(player.apiKey);
+    }
+    catch (e) {
+        return res.status(500).json({ error: 'Database error' });
+    }
+    if (!dbPlayer) {
+        return res.status(404).json({ error: 'Player not found in database' });
+    }
+    if (dbPlayer.verified) {
+        return res.json({ success: true, message: 'Already verified', verified: true });
+    }
+    const verification = await (0, twitter_1.verifyTweet)(tweetUrl, dbPlayer.verification_code, player.name);
+    if (!verification.valid) {
+        return res.status(400).json({ error: verification.error, verified: false });
+    }
+    // Mark as verified
+    try {
+        await db.verifyPlayer(player.id, verification.tweetId);
+    }
+    catch (e) {
+        return res.status(500).json({ error: 'Failed to save verification' });
+    }
+    res.json({
+        success: true,
+        verified: true,
+        tweetId: verification.tweetId,
+    });
+});
+// ============ Claims ============
+exports.router.get('/claim/:token', async (req, res) => {
+    const { token } = req.params;
+    try {
+        const claim = await db.getClaimByToken(token);
+        if (!claim) {
+            return res.status(404).json({ error: 'Claim not found' });
+        }
+        res.json({
+            id: claim.id,
+            playerName: claim.player_name,
+            wallet: claim.wallet,
+            amount: claim.amount_wei,
+            claimed: claim.claimed,
+            txHash: claim.tx_hash,
+            createdAt: claim.created_at,
+        });
+    }
+    catch (e) {
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+exports.router.post('/claim/:token', async (req, res) => {
+    const { token } = req.params;
+    try {
+        const claim = await db.getClaimByToken(token);
+        if (!claim) {
+            return res.status(404).json({ error: 'Claim not found' });
+        }
+        if (claim.claimed) {
+            return res.status(400).json({ error: 'Already claimed', txHash: claim.tx_hash });
+        }
+        // TODO: Trigger contract payout or Bankr transaction
+        // For now, just mark as pending manual processing
+        res.json({
+            success: true,
+            message: 'Claim submitted for processing',
+            wallet: claim.wallet,
+            amount: claim.amount_wei,
+        });
+    }
+    catch (e) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 // ============ Lobby ============
 exports.router.get('/lobbies', (req, res) => {

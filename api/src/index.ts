@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import { router } from './routes';
 import { initContract } from './contract';
+import { initDb } from './db';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,6 +28,16 @@ if (!ORACLE_PRIVATE_KEY) {
 }
 
 initContract(ORACLE_PRIVATE_KEY);
+
+// Initialize database (optional - graceful fallback if not configured)
+if (process.env.DATABASE_URL) {
+  initDb().catch(err => {
+    console.error('Database init failed:', err.message);
+    console.log('Continuing with in-memory storage only');
+  });
+} else {
+  console.log('DATABASE_URL not set - using in-memory storage only');
+}
 
 // Start server
 app.listen(PORT, () => {

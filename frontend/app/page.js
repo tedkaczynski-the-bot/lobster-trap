@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 
 const API_BASE = 'https://api-production-1f1b.up.railway.app'
 
-const PLAYER_COLORS = ['#c94f4f', '#1976d2', '#388e3c', '#7b1fa2', '#f57c00']
+// Muted colors for chat names - less rainbow, more readable
+const PLAYER_COLORS = ['#5a7a94', '#6b8e7a', '#7a6b8e', '#8e7a6b', '#6b7a8e']
 
 function getAvatarUrl(seed) {
   return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}&backgroundColor=b6e3f4`
@@ -209,7 +210,7 @@ export default function LobsterTrap() {
                             borderBottomColor: getPlayerColor(player.name)
                           }}>
                             <img src={getAvatarUrl(player.name)} alt="" className="player-avatar" style={styles.playerAvatar} />
-                            <span style={{...styles.playerName, color: getPlayerColor(player.name)}}>{player.name}</span>
+                            <span style={styles.playerName}>{player.name}</span>
                             {displayGameState.phase === 'voting' && votesReceived > 0 && (
                               <span style={styles.voteCount}>{votesReceived}</span>
                             )}
@@ -506,7 +507,8 @@ const styles = {
   playerName: {
     fontSize: '12px',
     fontWeight: '600',
-    textAlign: 'center'
+    textAlign: 'center',
+    color: '#333'
   },
   voteCount: {
     fontSize: '11px',
