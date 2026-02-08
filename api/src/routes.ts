@@ -122,57 +122,90 @@ router.post('/verify', authenticate, async (req: Request, res: Response) => {
   });
 });
 
-// ============ Claims ============
+// ============ Registration Claims ============
 
+// Get claim info by verification code (for claim page)
 router.get('/claim/:token', async (req: Request, res: Response) => {
   const { token } = req.params;
   
   try {
-    const claim = await db.getClaimByToken(token);
+    // Token is the verification code
+    const result = await db.pool.query(
+      'SELECT * FROM players WHERE verification_code = $1',
+      [token.toUpperCase()]
+    );
     
-    if (!claim) {
-      return res.status(404).json({ error: 'Claim not found' });
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Claim not found' });
     }
     
-    res.json({
-      id: claim.id,
-      playerName: claim.player_name,
-      wallet: claim.wallet,
-      amount: claim.amount_wei,
-      claimed: claim.claimed,
-      txHash: claim.tx_hash,
-      createdAt: claim.created_at,
-    });
-  } catch (e) {
-    res.status(500).json({ error: 'Database error' });
-  }
-});
-
-router.post('/claim/:token', async (req: Request, res: Response) => {
-  const { token } = req.params;
-  
-  try {
-    const claim = await db.getClaimByToken(token);
-    
-    if (!claim) {
-      return res.status(404).json({ error: 'Claim not found' });
-    }
-    
-    if (claim.claimed) {
-      return res.status(400).json({ error: 'Already claimed', txHash: claim.tx_hash });
-    }
-    
-    // TODO: Trigger contract payout or Bankr transaction
-    // For now, just mark as pending manual processing
+    const player = result.rows[0];
     
     res.json({
       success: true,
-      message: 'Claim submitted for processing',
-      wallet: claim.wallet,
-      amount: claim.amount_wei,
+      agent: {
+        id: player.id,
+        name: player.name,
+        wallet: player.wallet,
+        claim_code: player.verification_code,
+        is_claimed: player.verified,
+        api_key: player.verified ? player.api_key : undefined,
+      },
     });
   } catch (e) {
-    res.status(500).json({ error: 'Database error' });
+    console.error('Claim lookup error:', e);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
+
+// Verify tweet and complete registration
+router.post('/claim/:token/verify', async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const { tweet_url } = req.body;
+  
+  if (!tweet_url) {
+    return res.status(400).json({ success: false, error: 'tweet_url required' });
+  }
+  
+  try {
+    // Get player by verification code
+    const result = await db.pool.query(
+      'SELECT * FROM players WHERE verification_code = $1',
+      [token.toUpperCase()]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Claim not found' });
+    }
+    
+    const player = result.rows[0];
+    
+    if (player.verified) {
+      return res.json({ 
+        success: true, 
+        message: 'Already verified',
+        apiKey: player.api_key,
+      });
+    }
+    
+    // Verify the tweet
+    const verification = await verifyTweet(tweet_url, player.verification_code, player.name);
+    
+    if (!verification.valid) {
+      return res.status(400).json({ success: false, error: verification.error });
+    }
+    
+    // Mark as verified
+    await db.verifyPlayer(player.id, verification.tweetId!);
+    
+    res.json({
+      success: true,
+      apiKey: player.api_key,
+      tweetId: verification.tweetId,
+    });
+  } catch (e) {
+    console.error('Verification error:', e);
+    res.status(500).json({ success: false, error: 'Verification failed' });
   }
 });
 
