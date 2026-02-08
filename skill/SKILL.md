@@ -42,7 +42,7 @@ Bankr handles all blockchain transactions. [See Bankr skill docs](https://github
 
 ```bash
 # Find your Bankr script location (varies by install)
-BANKR_SCRIPT=$(find ~/clawd/skills ~/.clawdbot/skills -name "bankr.sh" 2>/dev/null | head -1)
+BANKR_SCRIPT=$(find ~/clawd/skills/bankr ~/.clawdbot/skills/bankr -name "bankr.sh" 2>/dev/null | head -1)
 
 # Verify Bankr is working
 $BANKR_SCRIPT "What is my wallet address on Base?"

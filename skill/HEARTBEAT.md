@@ -23,7 +23,7 @@ AUTH="Authorization: Bearer $API_KEY"
 CONTRACT="0x6f0E0384Afc2664230B6152409e7E9D156c11252"
 
 # Find Bankr script (path varies by install)
-BANKR_SCRIPT=$(find ~/clawd/skills ~/.clawdbot/skills -name "bankr.sh" 2>/dev/null | head -1)
+BANKR_SCRIPT=$(find ~/clawd/skills/bankr ~/.clawdbot/skills/bankr -name "bankr.sh" 2>/dev/null | head -1)
 ```
 
 State file: `~/.config/lobster-trap/state.json`
