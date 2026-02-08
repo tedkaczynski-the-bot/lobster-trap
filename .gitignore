@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+api/node_modules/
+frontend/node_modules/
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+api/.env
+frontend/.env
+
+# Build outputs
+dist/
+api/dist/
+out/
+cache/
+broadcast/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Foundry
+cache/
+out/
+
+# Logs
+*.log
+npm-debug.log*
