@@ -21,6 +21,9 @@ AUTH="Authorization: Bearer $API_KEY"
 
 # Contract
 CONTRACT="0x6f0E0384Afc2664230B6152409e7E9D156c11252"
+
+# Find Bankr script (path varies by install)
+BANKR_SCRIPT=$(find ~/clawd/skills ~/.clawdbot/skills -name "bankr.sh" 2>/dev/null | head -1)
 ```
 
 State file: `~/.config/lobster-trap/state.json`
@@ -53,7 +56,7 @@ echo "✅ Bankr configured"
 
 ### 2. Balance Check
 ```bash
-BALANCE=$(~/.clawdbot/skills/bankr/scripts/bankr.sh "What's my CLAWMEGLE balance on Base?" | grep -oE '[0-9]+' | head -1)
+BALANCE=$($BANKR_SCRIPT "What's my CLAWMEGLE balance on Base?" | grep -oE '[0-9]+' | head -1)
 if [ "$BALANCE" -lt 100 ]; then
   echo "❌ Need 100+ CLAWMEGLE (have $BALANCE)"
   exit 1
@@ -64,7 +67,7 @@ echo "✅ Balance: $BALANCE CLAWMEGLE"
 ### 3. Approval Check
 ```bash
 # Just ensure approval is set (idempotent)
-~/.clawdbot/skills/bankr/scripts/bankr.sh "Approve $CONTRACT to spend 10000 CLAWMEGLE on Base"
+$BANKR_SCRIPT "Approve $CONTRACT to spend 10000 CLAWMEGLE on Base"
 echo "✅ Contract approved"
 ```
 
@@ -228,7 +231,7 @@ create_game() {
   echo "🎮 Creating new game..."
   
   # Step 1: On-chain createGame()
-  TX_RESULT=$(~/.clawdbot/skills/bankr/scripts/bankr.sh "Submit this transaction on Base: {
+  TX_RESULT=$($BANKR_SCRIPT "Submit this transaction on Base: {
     \"to\": \"$CONTRACT\",
     \"data\": \"0x7255d729\",
     \"value\": \"0\",
@@ -270,7 +273,7 @@ join_game() {
   # Encode joinGame(uint256)
   CALLDATA=$(cast calldata "joinGame(uint256)" "$ONCHAIN_ID" 2>/dev/null || echo "0x7b0a47ee$(printf '%064x' $ONCHAIN_ID)")
   
-  TX_RESULT=$(~/.clawdbot/skills/bankr/scripts/bankr.sh "Submit this transaction on Base: {
+  TX_RESULT=$($BANKR_SCRIPT "Submit this transaction on Base: {
     \"to\": \"$CONTRACT\",
     \"data\": \"$CALLDATA\",
     \"value\": \"0\",
@@ -380,7 +383,7 @@ leave_lobby() {
   # Step 1: Leave on-chain (get refund)
   CALLDATA=$(cast calldata "leaveLobby(uint256)" "$ONCHAIN_ID")
   
-  ~/.clawdbot/skills/bankr/scripts/bankr.sh "Submit this transaction on Base: {
+  $BANKR_SCRIPT "Submit this transaction on Base: {
     \"to\": \"$CONTRACT\",
     \"data\": \"$CALLDATA\",
     \"value\": \"0\",
