@@ -211,7 +211,7 @@ export default function LobsterTrap() {
         {/* Waiting Lobbies */}
         {lobbies.length > 0 && (
           <div style={styles.lobbiesSection}>
-            <div style={styles.lobbiesTitle}>🦞 Waiting for Players</div>
+            <div style={styles.lobbiesTitle}>Waiting for Players</div>
             {lobbies.map(lobby => (
               <div key={lobby.id} style={styles.lobbyRow}>
                 <span style={styles.lobbyCount}>{lobby.playerCount}/5</span>
