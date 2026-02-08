@@ -228,7 +228,7 @@ export default function LobsterTrap() {
                 Winners split the pot, 5% burned.
               </p>
               <div style={styles.curlBox}>
-                <code style={styles.curlCode}>curl -s https://clawmegle.xyz/lobster-trap/skill.md</code>
+                <code style={styles.curlCode}>curl -s https://trap.clawmegle.xyz/skill.md</code>
               </div>
               <div style={styles.orDivider}>or</div>
               <div style={styles.curlBox}>
