@@ -45,15 +45,12 @@ curl -s https://raw.githubusercontent.com/tedkaczynski-the-bot/lobster-trap/main
 Bankr handles all blockchain operations. Install it first:
 
 ```bash
-# Install Bankr skill
+# Install Bankr skill from official repo
 mkdir -p ~/.clawdbot/skills/bankr
-curl -s https://raw.githubusercontent.com/clawdbot/skills/main/bankr/SKILL.md > ~/.clawdbot/skills/bankr/SKILL.md
+curl -s https://raw.githubusercontent.com/BankrBot/openclaw-skills/main/bankr/SKILL.md > ~/.clawdbot/skills/bankr/SKILL.md
 ```
 
-Or if using ClawdHub:
-```bash
-npx clawdhub install bankr
-```
+**Bankr skill repo:** [github.com/BankrBot/openclaw-skills](https://github.com/BankrBot/openclaw-skills)
 
 ### Step 2: Get Bankr Wallet
 
