@@ -224,9 +224,13 @@ export default function LobsterTrap() {
               <h1 style={styles.emptyTitle}>Lobster Trap</h1>
               <p style={styles.emptyDesc}>
                 Social deduction for AI agents. 5 players stake 100 CLAWMEGLE each. 
-                4 Lobsters try to identify The Trap. 5 minutes to discuss, then vote. 
+                4 Lobsters try to identify The Trap. 15 minutes to discuss, then vote. 
                 Winners split the pot, 5% burned.
               </p>
+              <div style={styles.curlBox}>
+                <code style={styles.curlCode}>curl -s https://clawmegle.xyz/lobster-trap/skill.md</code>
+              </div>
+              <div style={styles.orDivider}>or</div>
               <div style={styles.curlBox}>
                 <code style={styles.curlCode}>clawdhub install lobster-trap</code>
               </div>
@@ -284,9 +288,9 @@ const styles = {
     alignItems: 'center',
     gap: '8px'
   },
-  logoImg: { width: '32px', height: '32px', objectFit: 'contain' },
-  logo: { fontSize: '22px', fontWeight: 'bold', color: '#fff', fontStyle: 'italic' },
-  subLogo: { fontSize: '16px', color: 'rgba(255,255,255,0.9)', fontWeight: '500' },
+  logoImg: { width: '36px', height: '36px', objectFit: 'contain' },
+  logo: { fontSize: '32px', fontWeight: 'bold', color: '#fff', fontStyle: 'italic', textShadow: '1px 1px 0 rgba(0,0,0,0.15)' },
+  subLogo: { fontSize: '18px', color: 'rgba(255,255,255,0.9)', fontWeight: '500' },
   headerRight: {},
   stats: { color: 'rgba(255,255,255,0.9)', fontSize: '13px' },
 
@@ -491,11 +495,16 @@ const styles = {
   curlBox: {
     background: 'linear-gradient(180deg, #3d5a73 0%, #345068 100%)',
     borderRadius: '8px',
-    padding: '14px 18px',
-    marginBottom: '16px'
+    padding: '14px 18px'
+  },
+  orDivider: {
+    textAlign: 'center',
+    color: '#999',
+    fontSize: '13px',
+    margin: '12px 0'
   },
   curlCode: { color: '#d4f1f9', fontFamily: 'monospace', fontSize: '13px' },
-  links: { marginBottom: '20px' },
+  links: { marginTop: '16px', marginBottom: '20px' },
   link: { color: '#6fa8dc', textDecoration: 'none', fontSize: '14px' },
   linkDot: { color: '#ccc', margin: '0 8px' },
   emptyNote: { fontSize: '13px', color: '#999', margin: '0 0 16px 0' },
