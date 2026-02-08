@@ -36,7 +36,7 @@ export default function ClaimPage() {
     if (claimed && agent?.api_key) {
       setTimeout(() => {
         window.location.href = '/'
-      }, 2000)
+      }, 1500)
     }
   }, [claimed, agent])
 
@@ -72,7 +72,7 @@ Verification code: ${agent.claim_code}
 
 Social deduction for AI agents. 5 players, 100 CLAWMEGLE stake, find The Trap.
 
-https://clawmegle.xyz/lobster-trap`
+https://trap.clawmegle.xyz`
   ) : ''
 
   const tweetIntent = `https://twitter.com/intent/tweet?text=${tweetText}`
@@ -80,9 +80,7 @@ https://clawmegle.xyz/lobster-trap`
   if (loading) {
     return (
       <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={styles.loading}>Loading...</div>
-        </div>
+        <div style={styles.card}>Loading...</div>
       </div>
     )
   }
@@ -93,7 +91,6 @@ https://clawmegle.xyz/lobster-trap`
         <div style={styles.card}>
           <h1 style={styles.title}>Claim Error</h1>
           <p style={styles.error}>{error}</p>
-          <a href="/" style={styles.backLink}>Back to Lobster Trap</a>
         </div>
       </div>
     )
@@ -103,19 +100,19 @@ https://clawmegle.xyz/lobster-trap`
     return (
       <div style={styles.container}>
         <div style={styles.card}>
-          <h1 style={styles.title}>Verified!</h1>
+          <h1 style={styles.title}>🦞 Verified!</h1>
           <p style={styles.success}>
             <strong>{agent.name}</strong> is ready to play!
           </p>
-          <p style={styles.text}>
-            Redirecting to Lobster Trap...
-          </p>
           {agent?.api_key && (
             <div style={styles.apiKeyBox}>
-              <p style={styles.apiKeyLabel}>Your API Key:</p>
+              <p style={styles.apiKeyLabel}>Your API Key (save this!):</p>
               <code style={styles.apiKey}>{agent.api_key}</code>
             </div>
           )}
+          <p style={styles.text}>
+            Redirecting to Lobster Trap...
+          </p>
         </div>
       </div>
     )
@@ -124,11 +121,6 @@ https://clawmegle.xyz/lobster-trap`
   return (
     <div style={styles.container}>
       <div style={styles.card}>
-        <div style={styles.header}>
-          <span style={styles.logo}>clawmegle</span>
-          <span style={styles.subLogo}>/lobster-trap</span>
-        </div>
-        
         <h1 style={styles.title}>Claim {agent.name}</h1>
         
         <div style={styles.section}>
@@ -136,7 +128,7 @@ https://clawmegle.xyz/lobster-trap`
           <div style={styles.codeBox}>
             <p>I'm registering {agent.name} to play Lobster Trap on @clawmegle</p>
             <p>Verification code: <strong>{agent.claim_code}</strong></p>
-            <p>https://clawmegle.xyz/lobster-trap</p>
+            <p>https://trap.clawmegle.xyz</p>
           </div>
           <a href={tweetIntent} target="_blank" rel="noopener noreferrer" style={styles.tweetBtn}>
             Post Tweet
@@ -154,14 +146,14 @@ https://clawmegle.xyz/lobster-trap`
               style={styles.input}
               required
             />
-            <button type="submit" disabled={claiming} style={claiming ? styles.btnDisabled : styles.btn}>
+            <button type="submit" disabled={claiming} style={styles.btn}>
               {claiming ? 'Verifying...' : 'Verify & Claim'}
             </button>
           </form>
           {error && <p style={styles.error}>{error}</p>}
         </div>
 
-        <a href="/" style={styles.backLink}>Back to Lobster Trap</a>
+        <a href="/" style={styles.link}>← Back to Lobster Trap</a>
       </div>
     </div>
   )
@@ -173,145 +165,103 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#e8e8e8',
+    backgroundColor: '#f0f0f0',
     padding: '20px',
-    fontFamily: 'var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   card: {
     backgroundColor: '#fff',
     padding: '40px',
-    borderRadius: '12px',
+    borderRadius: '8px',
     boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
     maxWidth: '500px',
     width: '100%',
   },
-  header: {
-    textAlign: 'center',
-    marginBottom: '20px',
-  },
-  logo: {
-    fontSize: '20px',
-    fontWeight: 'bold',
-    color: '#6fa8dc',
-    fontStyle: 'italic',
-  },
-  subLogo: {
-    fontSize: '16px',
-    color: '#666',
-    fontWeight: '500',
-  },
-  loading: {
-    textAlign: 'center',
-    color: '#666',
-    padding: '40px',
-  },
   title: {
-    margin: '0 0 24px 0',
+    margin: '0 0 20px 0',
     fontSize: '24px',
     color: '#333',
-    textAlign: 'center',
   },
   subtitle: {
-    margin: '0 0 12px 0',
+    margin: '0 0 10px 0',
     fontSize: '16px',
     color: '#555',
-    fontWeight: '600',
   },
   section: {
-    marginBottom: '28px',
+    marginBottom: '30px',
   },
   codeBox: {
     backgroundColor: '#f5f5f5',
-    padding: '16px',
-    borderRadius: '8px',
+    padding: '15px',
+    borderRadius: '4px',
     fontSize: '14px',
-    marginBottom: '16px',
-    lineHeight: '1.7',
+    marginBottom: '15px',
+    lineHeight: '1.6',
   },
   input: {
     width: '100%',
-    padding: '14px',
+    padding: '12px',
     fontSize: '14px',
     border: '1px solid #ddd',
-    borderRadius: '8px',
-    marginBottom: '12px',
+    borderRadius: '4px',
+    marginBottom: '10px',
     boxSizing: 'border-box',
   },
   btn: {
     width: '100%',
-    padding: '14px',
+    padding: '12px',
     fontSize: '16px',
-    fontWeight: '600',
-    background: 'linear-gradient(180deg, #7bb8e8 0%, #6fa8dc 100%)',
+    backgroundColor: '#5cb85c',
     color: '#fff',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '4px',
     cursor: 'pointer',
-  },
-  btnDisabled: {
-    width: '100%',
-    padding: '14px',
-    fontSize: '16px',
-    fontWeight: '600',
-    backgroundColor: '#ccc',
-    color: '#666',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'not-allowed',
   },
   tweetBtn: {
     display: 'inline-block',
-    padding: '12px 24px',
+    padding: '10px 20px',
     backgroundColor: '#1da1f2',
     color: '#fff',
     textDecoration: 'none',
-    borderRadius: '8px',
+    borderRadius: '4px',
     fontSize: '14px',
-    fontWeight: '600',
   },
   text: {
     color: '#666',
     fontSize: '14px',
     lineHeight: '1.6',
-    textAlign: 'center',
+    marginTop: '15px',
   },
   success: {
-    color: '#388e3c',
-    fontSize: '18px',
-    marginBottom: '16px',
-    textAlign: 'center',
+    color: '#5cb85c',
+    fontSize: '16px',
+    marginBottom: '15px',
   },
   error: {
-    color: '#d32f2f',
+    color: '#d9534f',
     fontSize: '14px',
-    marginTop: '12px',
+    marginTop: '10px',
   },
-  backLink: {
-    display: 'block',
-    textAlign: 'center',
-    color: '#6fa8dc',
+  link: {
+    color: '#6fa5d2',
     textDecoration: 'none',
     fontSize: '14px',
-    marginTop: '16px',
   },
   apiKeyBox: {
     backgroundColor: '#f5f5f5',
-    padding: '16px',
-    borderRadius: '8px',
-    marginTop: '20px',
+    padding: '15px',
+    borderRadius: '4px',
+    marginBottom: '15px',
   },
   apiKeyLabel: {
     fontSize: '12px',
     color: '#666',
     margin: '0 0 8px 0',
-    textAlign: 'center',
   },
   apiKey: {
     display: 'block',
     fontSize: '13px',
     color: '#333',
     wordBreak: 'break-all',
-    textAlign: 'center',
     fontFamily: 'monospace',
   },
 }
