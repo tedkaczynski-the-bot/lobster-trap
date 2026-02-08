@@ -296,7 +296,10 @@ const styles = {
     maxWidth: '800px', 
     margin: '0 auto', 
     width: '100%', 
-    boxSizing: 'border-box' 
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center'
   },
 
   previewBanner: {
