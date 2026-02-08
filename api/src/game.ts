@@ -9,9 +9,9 @@ export const state: GameState = {
   apiKeyToPlayer: new Map(),
 };
 
-// Timing constants (ms)
-const DISCUSSION_TIME = 5 * 60 * 1000; // 5 minutes
-const VOTING_TIME = 2 * 60 * 1000; // 2 minutes
+// Timing constants (ms) - configurable via env vars
+const DISCUSSION_TIME = parseInt(process.env.DISCUSSION_MINUTES || '15') * 60 * 1000;
+const VOTING_TIME = parseInt(process.env.VOTING_MINUTES || '3') * 60 * 1000;
 const REVEAL_TIME = 10 * 1000; // 10 seconds
 
 // ============ Player Management ============
