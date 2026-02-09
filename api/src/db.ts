@@ -143,3 +143,142 @@ export async function markClaimComplete(claimId: string, txHash: string) {
   );
   return result.rows[0];
 }
+
+// Game operations
+export async function createGame(id: string, onchainGameId: number) {
+  const result = await pool.query(
+    `INSERT INTO games (id, onchain_game_id, phase, round)
+     VALUES ($1, $2, 'lobby', 0)
+     RETURNING *`,
+    [id, onchainGameId.toString()]
+  );
+  return result.rows[0];
+}
+
+export async function updateGamePhase(gameId: string, phase: string, round: number, phaseEndsAt?: Date) {
+  const result = await pool.query(
+    `UPDATE games SET phase = $2, round = $3, phase_ends_at = $4 WHERE id = $1 RETURNING *`,
+    [gameId, phase, round, phaseEndsAt || null]
+  );
+  return result.rows[0];
+}
+
+export async function setGameTrap(gameId: string, trapPlayerId: string) {
+  const result = await pool.query(
+    `UPDATE games SET trap_player_id = $2 WHERE id = $1 RETURNING *`,
+    [gameId, trapPlayerId]
+  );
+  return result.rows[0];
+}
+
+export async function completeGame(gameId: string, winner: string) {
+  const result = await pool.query(
+    `UPDATE games SET winner = $2, phase = 'completed', completed_at = NOW() WHERE id = $1 RETURNING *`,
+    [gameId, winner]
+  );
+  return result.rows[0];
+}
+
+export async function getGame(gameId: string) {
+  const result = await pool.query('SELECT * FROM games WHERE id = $1', [gameId]);
+  return result.rows[0];
+}
+
+export async function getActiveGames() {
+  const result = await pool.query(
+    `SELECT * FROM games WHERE phase != 'completed' ORDER BY created_at DESC`
+  );
+  return result.rows;
+}
+
+// Game player operations
+export async function addGamePlayer(gameId: string, playerId: string, role?: string) {
+  const result = await pool.query(
+    `INSERT INTO game_players (game_id, player_id, role, is_alive, has_voted)
+     VALUES ($1, $2, $3, TRUE, FALSE)
+     ON CONFLICT (game_id, player_id) DO UPDATE SET role = COALESCE($3, game_players.role)
+     RETURNING *`,
+    [gameId, playerId, role || null]
+  );
+  return result.rows[0];
+}
+
+export async function removeGamePlayer(gameId: string, playerId: string) {
+  await pool.query(
+    `DELETE FROM game_players WHERE game_id = $1 AND player_id = $2`,
+    [gameId, playerId]
+  );
+}
+
+export async function updateGamePlayer(gameId: string, playerId: string, isAlive: boolean, hasVoted: boolean) {
+  const result = await pool.query(
+    `UPDATE game_players SET is_alive = $3, has_voted = $4 WHERE game_id = $1 AND player_id = $2 RETURNING *`,
+    [gameId, playerId, isAlive, hasVoted]
+  );
+  return result.rows[0];
+}
+
+export async function setPlayerRole(gameId: string, playerId: string, role: string) {
+  const result = await pool.query(
+    `UPDATE game_players SET role = $3 WHERE game_id = $1 AND player_id = $2 RETURNING *`,
+    [gameId, playerId, role]
+  );
+  return result.rows[0];
+}
+
+export async function getGamePlayers(gameId: string) {
+  const result = await pool.query(
+    `SELECT gp.*, p.name, p.wallet 
+     FROM game_players gp 
+     JOIN players p ON gp.player_id = p.id 
+     WHERE gp.game_id = $1`,
+    [gameId]
+  );
+  return result.rows;
+}
+
+// Message operations
+export async function saveMessage(id: string, gameId: string, playerId: string, playerName: string, content: string) {
+  const result = await pool.query(
+    `INSERT INTO messages (id, game_id, player_id, player_name, content)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING *`,
+    [id, gameId, playerId, playerName, content]
+  );
+  return result.rows[0];
+}
+
+export async function getMessages(gameId: string, since?: Date) {
+  if (since) {
+    const result = await pool.query(
+      `SELECT * FROM messages WHERE game_id = $1 AND created_at > $2 ORDER BY created_at ASC`,
+      [gameId, since]
+    );
+    return result.rows;
+  }
+  const result = await pool.query(
+    `SELECT * FROM messages WHERE game_id = $1 ORDER BY created_at ASC`,
+    [gameId]
+  );
+  return result.rows;
+}
+
+// Vote operations
+export async function saveVote(id: string, gameId: string, voterId: string, targetId: string, round: number) {
+  const result = await pool.query(
+    `INSERT INTO votes (id, game_id, voter_id, target_id, round)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT DO NOTHING
+     RETURNING *`,
+    [id, gameId, voterId, targetId, round]
+  );
+  return result.rows[0];
+}
+
+export async function getVotes(gameId: string, round: number) {
+  const result = await pool.query(
+    `SELECT * FROM votes WHERE game_id = $1 AND round = $2`,
+    [gameId, round]
+  );
+  return result.rows;
+}

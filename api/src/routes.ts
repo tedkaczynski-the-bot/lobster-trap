@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { randomUUID } from 'crypto';
 import {
   registerPlayer,
   getPlayerByApiKey,
@@ -260,6 +261,14 @@ router.post('/lobby/create', authenticate, async (req: Request, res: Response) =
   
   const game = createLobby(player, onchainGameId);
   
+  // Persist to database
+  try {
+    await db.createGame(game.id, onchainGameId);
+    await db.addGamePlayer(game.id, player.id);
+  } catch (e) {
+    console.error('DB persist failed (lobby/create):', e);
+  }
+  
   res.json({
     success: true,
     game: {
@@ -317,6 +326,28 @@ router.post('/lobby/:gameId/join', authenticate, async (req: Request, res: Respo
     return res.status(400).json({ error: 'Cannot join lobby (full or not found)' });
   }
   
+  // Persist to database
+  try {
+    await db.addGamePlayer(game.id, player.id);
+    // If game started (5 players), update phase
+    if (game.phase === 'discussion') {
+      await db.updateGamePhase(game.id, 'discussion', game.round, game.phaseEndsAt);
+      // Persist all player roles
+      for (const gp of game.players) {
+        if (gp.role) {
+          await db.setPlayerRole(game.id, gp.playerId, gp.role);
+        }
+      }
+      // Set trap in games table
+      const trapPlayer = game.players.find(p => p.role === 'trap');
+      if (trapPlayer) {
+        await db.setGameTrap(game.id, trapPlayer.playerId);
+      }
+    }
+  } catch (e) {
+    console.error('DB persist failed (lobby/join):', e);
+  }
+  
   res.json({
     success: true,
     game: {
@@ -328,7 +359,7 @@ router.post('/lobby/:gameId/join', authenticate, async (req: Request, res: Respo
   });
 });
 
-router.post('/lobby/:gameId/leave', authenticate, (req: Request, res: Response) => {
+router.post('/lobby/:gameId/leave', authenticate, async (req: Request, res: Response) => {
   const player = (req as any).player;
   const { gameId } = req.params;
   
@@ -336,6 +367,13 @@ router.post('/lobby/:gameId/leave', authenticate, (req: Request, res: Response) 
   
   if (!success) {
     return res.status(400).json({ error: 'Cannot leave lobby' });
+  }
+  
+  // Persist to database
+  try {
+    await db.removeGamePlayer(gameId, player.id);
+  } catch (e) {
+    console.error('DB persist failed (lobby/leave):', e);
   }
   
   res.json({ success: true });
@@ -404,7 +442,7 @@ router.get('/game/:gameId/messages', authenticate, (req: Request, res: Response)
   });
 });
 
-router.post('/game/:gameId/message', authenticate, (req: Request, res: Response) => {
+router.post('/game/:gameId/message', authenticate, async (req: Request, res: Response) => {
   const player = (req as any).player;
   const { gameId } = req.params;
   const { content } = req.body;
@@ -417,6 +455,13 @@ router.post('/game/:gameId/message', authenticate, (req: Request, res: Response)
   
   if (!message) {
     return res.status(400).json({ error: 'Cannot send message (wrong phase or not in game)' });
+  }
+  
+  // Persist to database
+  try {
+    await db.saveMessage(message.id, gameId, player.id, message.playerName, message.content);
+  } catch (e) {
+    console.error('DB persist failed (message):', e);
   }
   
   res.json({
@@ -432,7 +477,7 @@ router.post('/game/:gameId/message', authenticate, (req: Request, res: Response)
 
 // ============ Voting ============
 
-router.post('/game/:gameId/vote', authenticate, (req: Request, res: Response) => {
+router.post('/game/:gameId/vote', authenticate, async (req: Request, res: Response) => {
   const player = (req as any).player;
   const { gameId } = req.params;
   const { targetId } = req.body;
@@ -441,10 +486,20 @@ router.post('/game/:gameId/vote', authenticate, (req: Request, res: Response) =>
     return res.status(400).json({ error: 'targetId required' });
   }
   
+  const game = getGame(gameId);
   const success = castVote(gameId, player.id, targetId);
   
   if (!success) {
     return res.status(400).json({ error: 'Cannot vote (wrong phase, already voted, or invalid target)' });
+  }
+  
+  // Persist to database
+  try {
+    const voteId = randomUUID();
+    await db.saveVote(voteId, gameId, player.id, targetId, game?.round || 1);
+    await db.updateGamePlayer(gameId, player.id, true, true);
+  } catch (e) {
+    console.error('DB persist failed (vote):', e);
   }
   
   res.json({ success: true });
