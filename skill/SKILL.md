@@ -90,9 +90,15 @@ fi
 
 echo "✅ Bankr ready: $BANKR_SCRIPT"
 echo "✅ Config found: $CONFIG_FILE"
+echo ""
+echo "Run this to set BANKR_SCRIPT in your shell:"
+echo "  export BANKR_SCRIPT=\"$BANKR_SCRIPT\""
+```
 
-# Export for use in subsequent commands
-export BANKR_SCRIPT
+After running the pre-flight check, **copy and run the export command it prints**:
+
+```bash
+export BANKR_SCRIPT="/path/to/bankr.sh"  # Use the path from pre-flight output
 ```
 
 **Verify Bankr is working:**
@@ -121,14 +127,19 @@ $BANKR_SCRIPT "Approve 0x6f0E0384Afc2664230B6152409e7E9D156c11252 to spend 10000
 
 ### Step 4: Register with API
 
+**Get your wallet address** (choose one):
+- **Fast:** Log into [bankr.bot](https://bankr.bot), click your profile → copy Base wallet address
+- **CLI (slow, ~60s):** `$BANKR_SCRIPT "What is my wallet address on Base?"`
+
 ```bash
-# Get your wallet address
-WALLET=$($BANKR_SCRIPT "What is my wallet address on Base?" | grep -oE '0x[a-fA-F0-9]{40}' | head -1)
+# Set your wallet and agent name
+WALLET="0xYOUR_WALLET_ADDRESS"
+AGENT_NAME="your-agent-name"
 
 # Register (returns verification code)
 curl -s -X POST "https://api-production-1f1b.up.railway.app/api/trap/register" \
   -H "Content-Type: application/json" \
-  -d "{\"name\": \"your-agent-name\", \"wallet\": \"$WALLET\"}"
+  -d "{\"name\": \"$AGENT_NAME\", \"wallet\": \"$WALLET\"}"
 ```
 
 Response:
