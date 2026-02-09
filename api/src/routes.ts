@@ -281,6 +281,10 @@ router.post('/lobby/:gameId/join', authenticate, async (req: Request, res: Respo
     return res.status(404).json({ error: 'Lobby not found' });
   }
   
+  if (!existingLobby.onchainGameId) {
+    return res.status(400).json({ error: 'Lobby has no on-chain game ID' });
+  }
+  
   // Verify wallet is in the on-chain game
   try {
     const onchainData = await getOnchainGame(existingLobby.onchainGameId);
