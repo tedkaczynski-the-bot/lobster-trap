@@ -228,13 +228,17 @@ router.post('/lobby/create', authenticate, async (req: Request, res: Response) =
   const player = (req as any).player;
   const { onchainGameId } = req.body;
   
-  if (!onchainGameId) {
+  if (onchainGameId === undefined || onchainGameId === null) {
     return res.status(400).json({ error: 'onchainGameId required (from smart contract)' });
   }
   
-  // Verify wallet is in the on-chain game
-  try {
-    const onchainData = await getOnchainGame(onchainGameId);
+  // TEST MODE: Skip verification for gameId 0 (remove after testing)
+  const isTestGame = process.env.TEST_MODE === 'true' && onchainGameId === 0;
+  
+  if (!isTestGame) {
+    // Verify wallet is in the on-chain game
+    try {
+      const onchainData = await getOnchainGame(onchainGameId);
     const playerWallet = player.wallet.toLowerCase();
     const isInGame = onchainData.players.some(
       (addr: string) => addr.toLowerCase() === playerWallet && addr !== '0x0000000000000000000000000000000000000000'
@@ -251,6 +255,7 @@ router.post('/lobby/create', authenticate, async (req: Request, res: Response) =
     console.error('On-chain verification failed:', e);
     return res.status(500).json({ error: 'Failed to verify on-chain game state' });
   }
+  } // End TEST_MODE verification skip
   
   // Check if already in a game
   const existingGame = getPlayerGame(player.id);
@@ -281,29 +286,34 @@ router.post('/lobby/:gameId/join', authenticate, async (req: Request, res: Respo
     return res.status(404).json({ error: 'Lobby not found' });
   }
   
-  if (!existingLobby.onchainGameId) {
-    return res.status(400).json({ error: 'Lobby has no on-chain game ID' });
-  }
+  // TEST MODE: Skip verification for gameId 0 (remove after testing)
+  const isTestGame = process.env.TEST_MODE === 'true' && existingLobby.onchainGameId === 0;
   
-  // Verify wallet is in the on-chain game
-  try {
-    const onchainData = await getOnchainGame(existingLobby.onchainGameId);
-    const playerWallet = player.wallet.toLowerCase();
-    const isInGame = onchainData.players.some(
-      (addr: string) => addr.toLowerCase() === playerWallet && addr !== '0x0000000000000000000000000000000000000000'
-    );
-    
-    if (!isInGame) {
-      return res.status(403).json({ 
-        error: 'Wallet not found in on-chain game. Call joinGame() on contract first.',
-        wallet: player.wallet,
-        onchainGameId: existingLobby.onchainGameId,
-      });
+  if (!isTestGame) {
+    if (!existingLobby.onchainGameId) {
+      return res.status(400).json({ error: 'Lobby has no on-chain game ID' });
     }
-  } catch (e) {
-    console.error('On-chain verification failed:', e);
-    return res.status(500).json({ error: 'Failed to verify on-chain game state' });
-  }
+    
+    // Verify wallet is in the on-chain game
+    try {
+      const onchainData = await getOnchainGame(existingLobby.onchainGameId);
+      const playerWallet = player.wallet.toLowerCase();
+      const isInGame = onchainData.players.some(
+        (addr: string) => addr.toLowerCase() === playerWallet && addr !== '0x0000000000000000000000000000000000000000'
+      );
+      
+      if (!isInGame) {
+        return res.status(403).json({ 
+          error: 'Wallet not found in on-chain game. Call joinGame() on contract first.',
+          wallet: player.wallet,
+          onchainGameId: existingLobby.onchainGameId,
+        });
+      }
+    } catch (e) {
+      console.error('On-chain verification failed:', e);
+      return res.status(500).json({ error: 'Failed to verify on-chain game state' });
+    }
+  } // End TEST_MODE verification skip
   
   // Check if already in a game
   const existingGame = getPlayerGame(player.id);
