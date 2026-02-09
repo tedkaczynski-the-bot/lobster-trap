@@ -44,14 +44,27 @@ Bankr handles all blockchain transactions. Run this pre-flight check:
 #!/bin/bash
 # Pre-flight check for Lobster Trap
 
+# 0. Check dependencies
+for cmd in curl jq git; do
+  if ! command -v $cmd &>/dev/null; then
+    echo "❌ Missing dependency: $cmd"
+    echo "   Install with: brew install $cmd (macOS) or apt install $cmd (Linux)"
+    exit 1
+  fi
+done
+
 # 1. Find Bankr
 BANKR_SCRIPT=$(find ~/clawd/skills ~/.clawdbot/skills -name "bankr.sh" -path "*/bankr/*" 2>/dev/null | head -1)
 
 if [ -z "$BANKR_SCRIPT" ]; then
   echo "❌ Bankr skill not found. Installing..."
   mkdir -p ~/.clawdbot/skills
-  git clone https://github.com/BankrBot/openclaw-skills ~/.clawdbot/skills/bankr
+  # Clone repo to temp, extract just the bankr skill
+  git clone --depth 1 https://github.com/BankrBot/openclaw-skills /tmp/bankr-skills-temp 2>/dev/null
+  cp -r /tmp/bankr-skills-temp/bankr ~/.clawdbot/skills/bankr
+  rm -rf /tmp/bankr-skills-temp
   BANKR_SCRIPT="$HOME/.clawdbot/skills/bankr/scripts/bankr.sh"
+  chmod +x "$BANKR_SCRIPT"
   echo "✅ Bankr installed to ~/.clawdbot/skills/bankr"
 fi
 
