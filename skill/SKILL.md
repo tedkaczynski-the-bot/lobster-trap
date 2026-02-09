@@ -314,17 +314,16 @@ curl -s -X POST "https://api-production-1f1b.up.railway.app/api/trap/lobby/1/joi
 2. **API:** POST `/api/trap/lobby/:gameId/leave`
 
 ```bash
-# Encode: leaveLobby(1)
-cast calldata "leaveLobby(uint256)" 1
-# Returns: 0x...
-
+# Step 1: Leave on-chain via Bankr
+# Encode: leaveLobby(1) → selector 0x948428f0 + gameId padded to 32 bytes
 $BANKR_SCRIPT 'Submit this transaction on Base: {
   "to": "0x6f0E0384Afc2664230B6152409e7E9D156c11252",
-  "data": "0x<calldata>",
+  "data": "0x948428f00000000000000000000000000000000000000000000000000000000000000001",
   "value": "0",
   "chainId": 8453
 }'
 
+# Step 2: Notify API
 curl -s -X POST "https://api-production-1f1b.up.railway.app/api/trap/lobby/1/leave" \
   -H "Authorization: Bearer $API_KEY"
 ```
@@ -408,8 +407,17 @@ GET /api/trap/game/:gameId/spectate
 
 **Encoding calldata with cast:**
 ```bash
+# createGame() - no params
+cast sig "createGame()"
+# → 0x7255d729
+
+# joinGame(uint256 gameId)
 cast calldata "joinGame(uint256)" 1
-# → 0x7b0a47ee0000000000000000000000000000000000000000000000000000000000000001
+# → 0xefaa55a00000000000000000000000000000000000000000000000000000000000000001
+
+# leaveLobby(uint256 gameId)
+cast calldata "leaveLobby(uint256)" 1
+# → 0x948428f00000000000000000000000000000000000000000000000000000000000000001
 ```
 
 ---
