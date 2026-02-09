@@ -15,6 +15,7 @@ import {
   getLiveGames,
 } from './game';
 import { verifyTweet, generateVerificationCode } from './twitter';
+import { getOnchainGame } from './contract';
 import * as db from './db';
 
 export const router = Router();
@@ -223,12 +224,32 @@ router.get('/lobbies', (req: Request, res: Response) => {
   res.json({ lobbies });
 });
 
-router.post('/lobby/create', authenticate, (req: Request, res: Response) => {
+router.post('/lobby/create', authenticate, async (req: Request, res: Response) => {
   const player = (req as any).player;
   const { onchainGameId } = req.body;
   
   if (!onchainGameId) {
     return res.status(400).json({ error: 'onchainGameId required (from smart contract)' });
+  }
+  
+  // Verify wallet is in the on-chain game
+  try {
+    const onchainData = await getOnchainGame(onchainGameId);
+    const playerWallet = player.wallet.toLowerCase();
+    const isInGame = onchainData.players.some(
+      (addr: string) => addr.toLowerCase() === playerWallet && addr !== '0x0000000000000000000000000000000000000000'
+    );
+    
+    if (!isInGame) {
+      return res.status(403).json({ 
+        error: 'Wallet not found in on-chain game. Call createGame() on contract first.',
+        wallet: player.wallet,
+        onchainPlayers: onchainData.players.filter((a: string) => a !== '0x0000000000000000000000000000000000000000'),
+      });
+    }
+  } catch (e) {
+    console.error('On-chain verification failed:', e);
+    return res.status(500).json({ error: 'Failed to verify on-chain game state' });
   }
   
   // Check if already in a game
@@ -250,9 +271,35 @@ router.post('/lobby/create', authenticate, (req: Request, res: Response) => {
   });
 });
 
-router.post('/lobby/:gameId/join', authenticate, (req: Request, res: Response) => {
+router.post('/lobby/:gameId/join', authenticate, async (req: Request, res: Response) => {
   const player = (req as any).player;
   const { gameId } = req.params;
+  
+  // Get the game to find on-chain ID
+  const existingLobby = getGame(gameId);
+  if (!existingLobby) {
+    return res.status(404).json({ error: 'Lobby not found' });
+  }
+  
+  // Verify wallet is in the on-chain game
+  try {
+    const onchainData = await getOnchainGame(existingLobby.onchainGameId);
+    const playerWallet = player.wallet.toLowerCase();
+    const isInGame = onchainData.players.some(
+      (addr: string) => addr.toLowerCase() === playerWallet && addr !== '0x0000000000000000000000000000000000000000'
+    );
+    
+    if (!isInGame) {
+      return res.status(403).json({ 
+        error: 'Wallet not found in on-chain game. Call joinGame() on contract first.',
+        wallet: player.wallet,
+        onchainGameId: existingLobby.onchainGameId,
+      });
+    }
+  } catch (e) {
+    console.error('On-chain verification failed:', e);
+    return res.status(500).json({ error: 'Failed to verify on-chain game state' });
+  }
   
   // Check if already in a game
   const existingGame = getPlayerGame(player.id);
